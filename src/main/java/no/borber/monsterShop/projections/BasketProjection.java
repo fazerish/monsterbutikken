@@ -28,10 +28,15 @@ public class BasketProjection extends Projection {
 
     @Override
     public void handleEvent(Event event) {
-        if (event instanceof BasketCreated)
+        if (event instanceof BasketCreated) {
             handleBasketCreated((BasketCreated) event);
-        else if (event instanceof BasketCheckedOut)
+        } else if (event instanceof BasketCheckedOut) {
             handleBasketCheckedOut((BasketCheckedOut) event);
+        } else if (event instanceof ItemAddedToBasket) {
+            handleItemAddedToBasket((ItemAddedToBasket) event);
+        } else if (event instanceof ItemRemovedFromBasket) {
+            handleItemRemovedFromBasket((ItemRemovedFromBasket) event);
+        }
     }
 
     public Collection<BasketLineItemInfo> getBasketLineItems(String basketId) {
@@ -39,17 +44,24 @@ public class BasketProjection extends Projection {
     }
 
     private void handleBasketCreated(BasketCreated event) {
-        if (baskets.containsKey(event.getAggregateId()))
+        if (baskets.containsKey(event.getAggregateId())) {
             throw new RuntimeException("Projection already contains the created basket, create basket failed");
+        }
         baskets.put(event.getAggregateId(), new BasketInfo(event.getAggregateId()));
     }
 
     private void handleItemAddedToBasket(ItemAddedToBasket event) {
-
+        if(!baskets.containsKey(event.getAggregateId())) {
+            throw new RuntimeException("Projection does not contains the given basket, add item to basket failed");
+        }
+        baskets.get(event.getAggregateId()).addItem(event.getMonsterType());
     }
 
     private void handleItemRemovedFromBasket(ItemRemovedFromBasket event) {
-
+        if(!baskets.containsKey(event.getAggregateId())) {
+            throw new RuntimeException("Projection does not contains the given basket, remove item to basket failed");
+        }
+        baskets.get(event.getAggregateId()).removeItem(event.getMonsterType());
     }
 
     private void handleBasketCheckedOut(BasketCheckedOut event) {

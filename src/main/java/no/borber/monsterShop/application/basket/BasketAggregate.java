@@ -20,6 +20,10 @@ class BasketAggregate extends Aggregate {
                 updateState(event);
             else if( event instanceof BasketCheckedOut){
                 updateState((BasketCheckedOut) event);
+            } else if( event instanceof ItemAddedToBasket ) {
+                updateState((ItemAddedToBasket) event);
+            } else if( event instanceof ItemRemovedFromBasket ) {
+                updateState((ItemRemovedFromBasket) event);
             }
             //TODO: Should handle other basket events as well
         }
@@ -36,11 +40,23 @@ class BasketAggregate extends Aggregate {
     }
 
     public void addItemToBasket(String monsterType) {
-        //TODO: Should handle this command
+        if (basketState == null) {
+            throw new CommandValidationException("Attempt to add item from non-existing basket, add item failed");
+        } else if(basketState.getBasketCheckedOut()) {
+            throw new CommandValidationException("Attempt to add item to basket that has been previously checked out, add item failed");
+        } else {
+            derivedEvents.add(new ItemAddedToBasket(basketState.getBasketId(), monsterType));
+        }
     }
 
     public void removeItemFromBasket(String monsterType) {
-        //TODO: Should handle this command
+        if (basketState == null) {
+            throw new CommandValidationException("Attempt to remove item from non-existing basket, remove item failed");
+        } else if (basketState.getBasketCheckedOut()){
+            throw new CommandValidationException("Attempt to remove item from basket that has been previously checked out, remove item failed");
+        } else {
+            derivedEvents.add(new ItemRemovedFromBasket(basketState.getBasketId(), monsterType));
+        }
     }
 
     public List<BasketLineItem> checkoutBasket(){
@@ -57,9 +73,16 @@ class BasketAggregate extends Aggregate {
         }
     }
 
-
     private void updateState(BasketCheckedOut event) {
         basketState.setBasketCheckedOut();
+    }
+
+    private void updateState(ItemAddedToBasket event) {
+        basketState.addMonsterToBasket(event.getMonsterType());
+    }
+
+    private void updateState(ItemRemovedFromBasket event) {
+        basketState.removeMonsterFromBasket();
     }
 
     private void updateState(Event event) {
